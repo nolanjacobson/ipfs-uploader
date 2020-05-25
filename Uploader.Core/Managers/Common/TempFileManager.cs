@@ -7,76 +7,85 @@ using Uploader.Core.Managers.Ipfs;
 
 namespace Uploader.Core.Managers.Common
 {
-    public static class TempFileManager
+  public static class TempFileManager
+  {
+    private static string _tempDirectoryPath;
+
+    public static string GetTempDirectory()
     {
-        private static string _tempDirectoryPath;
+      if (_tempDirectoryPath == null)
+      {
+        if (GeneralSettings.Instance.TempFilePath.Length > 0)
+          _tempDirectoryPath = GeneralSettings.Instance.TempFilePath;
+        else
+          _tempDirectoryPath = Path.GetTempPath();
+      }
 
-        public static string GetTempDirectory()
-        {
-            if(_tempDirectoryPath == null)
-            {
-                if (GeneralSettings.Instance.TempFilePath.Length > 0)
-                    _tempDirectoryPath = GeneralSettings.Instance.TempFilePath;
-                else
-                    _tempDirectoryPath = Path.GetTempPath();
-            }
-
-            return _tempDirectoryPath;
-        }
-
-        public static string GetNewTempFilePath()
-        {
-            return Path.Combine(GetTempDirectory(), Path.GetRandomFileName());
-        }
-
-        public static void SafeDeleteTempFile(string filePath, string hash = "")
-        {
-            if(string.IsNullOrWhiteSpace(filePath))
-                return;
-
-            try
-            {                
-                // suppression du fichier temporaire, ne pas jeter d'exception en cas d'erreur
-                if (File.Exists(filePath))
-                {
-                    if (IpfsSettings.Instance.OnlyHash && hash.Length == 46)
-                    {
-                        File.Move(filePath, Path.Combine(GeneralSettings.Instance.FinalFilePath, hash));
-                    }
-                    File.Delete(filePath);
-                } 
-            }
-            catch
-            {}
-        }
-
-        public static void SafeDeleteTempFiles(IList<string> filesPath, string hash = "")
-        {
-            if(filesPath == null)
-                return;
-
-            // suppression des images
-            foreach (string filePath in filesPath)
-            {
-                SafeDeleteTempFile(filePath, hash);
-            }
-        }
-
-        public static void SafeCopyError(string filePath, string hash)
-        {
-            if(string.IsNullOrWhiteSpace(filePath))
-                return;
-
-            try
-            {
-                // suppression du fichier temporaire, ne pas jeter d'exception en cas d'erreur
-                if (File.Exists(filePath))
-                {
-                    File.Copy(filePath, Path.Combine(GeneralSettings.Instance.ErrorFilePath, hash));
-                } 
-            }
-            catch
-            {}
-        }
+      return _tempDirectoryPath;
     }
+
+    public static string GetNewTempFilePath()
+    {
+      return Path.Combine(GetTempDirectory(), Path.GetRandomFileName());
+    }
+
+    public static void SafeDeleteTempFile(string filePath, string hash = "")
+    {
+      if (string.IsNullOrWhiteSpace(filePath))
+        return;
+
+      try
+      {
+        // suppression du fichier temporaire, ne pas jeter d'exception en cas d'erreur
+        if (File.Exists(filePath))
+        {
+          if (IpfsSettings.Instance.OnlyHash && hash.Length == 46)
+          {
+            var finalFile = Path.Combine(GeneralSettings.Instance.FinalFilePath, hash);
+            finalFile = Path.ChangeExtension(finalFile, "mp4");
+            if (File.Exists(finalFile))
+            {
+              File.Delete(finalFile);
+            }
+
+            File.Move(filePath, finalFile);
+          }
+          File.Delete(filePath);
+        }
+      }
+      catch (Exception e)
+      {
+        Console.WriteLine(e.Message);
+      }
+    }
+
+    public static void SafeDeleteTempFiles(IList<string> filesPath, string hash = "")
+    {
+      if (filesPath == null)
+        return;
+
+      // suppression des images
+      foreach (string filePath in filesPath)
+      {
+        SafeDeleteTempFile(filePath, hash);
+      }
+    }
+
+    public static void SafeCopyError(string filePath, string hash)
+    {
+      if (string.IsNullOrWhiteSpace(filePath))
+        return;
+
+      try
+      {
+        // suppression du fichier temporaire, ne pas jeter d'exception en cas d'erreur
+        if (File.Exists(filePath))
+        {
+          File.Copy(filePath, Path.Combine(GeneralSettings.Instance.ErrorFilePath, hash));
+        }
+      }
+      catch
+      { }
+    }
+  }
 }

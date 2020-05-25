@@ -13,7 +13,7 @@ namespace Uploader.Web
         public static IWebHost BuildWebHost(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
             .UseSetting(WebHostDefaults.DetailedErrorsKey, "true")
-            .UseUrls("http://0.0.0.0:5000")
+            .UseUrls("http://localhost:5000")
             .UseStartup<Startup>()
             .Build();
     }
